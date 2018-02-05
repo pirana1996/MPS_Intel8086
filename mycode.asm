@@ -1,4 +1,3 @@
-;0716:0007
 ; multi-segment executable file template.
 ;
 ;
@@ -20,7 +19,10 @@ data segment
     msg_empty db "Nema poraka$"
     valid_flag db ?  
     counter db ?
-    tmp db ?  
+    tmp db ?       
+    kript db "   1$   2$   3$   4$   5$   6$   7$   8$   9$  10$  11$  12$  13$  14$  15$  16$  17$  18$  19$  20$  21$  22$  23$  24$  25$  26$"
+    kript_tmp db ?
+    pet db 5d
     tmp_w dw ?
     tmp_message db 30 dup(?)    
     index db ?
@@ -212,16 +214,28 @@ read_message PROC
     MOV al, index
     MOV dl, 30
     MUL dl    
-    ADD bx, ax
+    ADD bx, ax    
+    MOV dh, 5d
                   
     MOV counter, 0                 
-    REPEAT_READ:    
-        MOV ah, 02h
+    REPEAT_READ:   
         MOV dl, [bx]
         
         CMP [bx], '$'
         JE END_REPEAT_READ   
-        
+        ;dl = kript[dl-64]       
+        MOV cx, bx;cx-temporary for bx
+        SUB dl, 65d      
+        LEA bx, kript  
+        MOV ax, 0
+        MOV al, dl 
+        MOV dh, 5d
+        MUL dh       
+        ADD bl, al
+        MOV dx, bx
+        MOV bx, cx  
+         
+        MOV ah, 09h         
         int 21h  
         
         INC counter        
@@ -230,14 +244,14 @@ read_message PROC
     END_REPEAT_READ: 
     CMP counter, 0  
     JNE ne_prazna
-        MOV dl, OFFSET msg_empty
+        MOV dx, OFFSET msg_empty
         MOV ah, 09h
         INT 21h   
     ne_prazna:
     RET
 read_message ENDP 
 
-remove_message PROC
+remove_message PROC 
     MOV bx, OFFSET str1
     MOV ax, 0
     MOV al, index
